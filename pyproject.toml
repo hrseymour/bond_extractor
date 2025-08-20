@@ -4,12 +4,16 @@ version = "0.1.0"
 description = "Production-ready bond data scraper for SEC filings using Gemini 2.5"
 readme = "README.md"
 requires-python = ">=3.10"
-authors = [{name = "Harlan"}]
+authors = [{ name = "Harlan" }]
 dependencies = [
-  "pandas>=2.0",
-  "requests>=2.31",
-  "google-genai>=0.3",
+  "pandas",         # latest allowed by your Python version
+  "requests",
+  "google-genai",
+  "beautifulsoup4", # if you add the bs4 cleaner
+  "lxml",
 ]
 
 [tool.uv]
-dev-dependencies = ["pytest>=8.0"]
+dev-dependencies = [
+  "pytest",
+]

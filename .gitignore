@@ -18,3 +18,4 @@ build/
 config.secrets.ini
 .env
 output/
+uv.lock

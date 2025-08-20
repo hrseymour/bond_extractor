@@ -1,9 +1,11 @@
-import re
-import time
+# import re
+# import time
 from datetime import datetime, timedelta
 from typing import Optional
 import requests
 import pandas as pd
+
+from src.utils import html_to_structured_text_bs4
 
 class SECClient:
     def __init__(self, email: str):
@@ -55,8 +57,9 @@ class SECClient:
             url = f"https://www.sec.gov/Archives/edgar/data/{cik.lstrip('0')}/{acc_clean}/{document}"
             r = requests.get(url, headers=self.headers, timeout=30)
             r.raise_for_status()
-            text = re.sub(r'<[^>]+>', ' ', r.text)
-            text = re.sub(r'\s+', ' ', text)
+            # text = re.sub(r'<[^>]+>', ' ', r.text)
+            # text = re.sub(r'\s+', ' ', text)
+            text = html_to_structured_text_bs4(r.text)
             return text
         except Exception:
             return None

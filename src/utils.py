@@ -1,4 +1,6 @@
 import json
+from bs4 import BeautifulSoup
+import html
 import re
 from datetime import datetime
 from typing import Any, Optional
@@ -64,3 +66,126 @@ def safe_json_loads(s: str) -> dict:
         except Exception:
             pass
     return {}
+
+def html_to_structured_text_re(raw: str) -> str:
+    if not raw:
+        return ""
+
+    s = html.unescape(raw)
+
+    # Normalize newlines up front
+    s = s.replace("\r\n", "\n").replace("\r", "\n")
+
+    # Drop scripts/styles
+    s = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", s)
+
+    # <br> → hard line break
+    s = re.sub(r"(?is)<br\s*/?>", "\n", s)
+
+    # Lists
+    s = re.sub(r"(?is)</li\s*>", "\n", s)          # end of bullet = newline
+    s = re.sub(r"(?is)<li\b[^>]*>", "\n- ", s)     # bullet prefix
+    s = re.sub(r"(?is)</?(ul|ol)\b[^>]*>", "\n", s)
+
+    # Tables → light Markdown
+    s = re.sub(r"(?is)</t[dh]\s*>", " | ", s)      # cell separators
+    s = re.sub(r"(?is)</tr\s*>", "\n", s)          # row break
+    s = re.sub(r"(?is)<t(?:able|head|body|r|d|h)\b[^>]*>", " ", s)
+
+    # Paragraphs & headings: open = \n, close = \n\n (avoids double insertion)
+    s = re.sub(r"(?is)<(p|h[1-6])\b[^>]*>", "\n", s)
+    s = re.sub(r"(?is)</(p|h[1-6])\s*>", "\n\n", s)
+
+    # Divs are layout wrappers → space (prevents mid-sentence hard breaks)
+    s = re.sub(r"(?is)</?div\b[^>]*>", " ", s)
+
+    # Strip any remaining tags
+    s = re.sub(r"(?is)<[^>]+>", " ", s)
+
+    # Unicode niceties
+    s = s.replace("\u00A0", " ")                    # nbsp
+    s = s.replace("\u2013", "-").replace("\u2014", "-")
+
+    # Clean up table pipes at EOL
+    s = re.sub(r"[ \t]*\|\s*(?=\n|$)", "", s)
+
+    # Trim spaces around line breaks, then collapse runs
+    s = re.sub(r"[ \t]*\n[ \t]*", "\n", s)          # trim around \n
+    s = re.sub(r"\n{3,}", "\n\n", s)                # max one blank line
+    s = re.sub(r"[ \t]{2,}", " ", s)                # collapse spaces
+    s = re.sub(r"\n\n- ", "\n- ", s)                # no blank line before bullets
+
+    # Put "Item X" section headers on their own line (light-touch)
+    s = re.sub(r"(?mi)\s*(Item\s+\d+(?:\.\d+)*\s*[:\-–—]?)\s*", r"\n\1\n", s)
+    s = re.sub(r"\n{3,}", "\n\n", s)                # re-collapse after Item rule
+
+    return s.strip()
+
+def html_to_structured_text_bs4(raw: str) -> str:
+    """BeautifulSoup-based HTML→text: preserves useful structure for LLMs."""
+    if not raw:
+        return ""
+
+    s = html.unescape(raw)
+
+    # Use lxml if available (faster, more robust), otherwise builtin parser
+    soup = BeautifulSoup(s, "lxml") if hasattr(BeautifulSoup, "builder") else BeautifulSoup(s, "html.parser")
+
+    # Remove scripts/styles
+    for t in soup(["script", "style"]):
+        t.decompose()
+
+    # <br> → newline
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
+
+    # Lists: prefix bullets; replace <li> with text so we avoid nested formatting later
+    for li in soup.find_all("li"):
+        # get_text(" ", strip=True) keeps inline spacing sane
+        li.replace_with("\n- " + li.get_text(" ", strip=True))
+
+    # Tables → simple pipe-separated rows
+    for table in soup.find_all("table"):
+        rows = []
+        for tr in table.find_all("tr"):
+            cells = [td.get_text(" ", strip=True) for td in tr.find_all(["td", "th"])]
+            if cells:
+                rows.append(" | ".join(cells))
+        table_text = ("\n".join(rows)).strip()
+        table.replace_with("\n" + table_text + "\n")
+
+    # Headings / paragraphs → paragraph breaks
+    for tag in soup.find_all(["p", "h1","h2","h3","h4","h5","h6", "section", "article"]):
+        # Surround each with paragraph breaks; inner text keeps inline spacing
+        tag.insert_before("\n")
+        tag.insert_after("\n")
+
+    # <div> often wraps flow text; treat it lightly: just a space between blocks
+    for div in soup.find_all("div"):
+        # If the div has block children, we already added breaks above.
+        # Replace leftover simple divs with their text + a space separator.
+        if not div.find(["p","h1","h2","h3","h4","h5","h6","section","article","table","ul","ol"]):
+            div.insert_after(" ")
+            div.unwrap()
+
+    # At this point, soup contains mostly text and newlines.
+    text = soup.get_text(" ", strip=False)
+
+    # Normalize unicode and spacing
+    text = text.replace("\u00A0", " ")
+    text = text.replace("\u2013", "-").replace("\u2014", "-")
+
+    # Normalize newlines and spaces
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r"[ \t]*\n[ \t]*", "\n", text)  # trim spaces around newlines
+    text = re.sub(r"\n{3,}", "\n\n", text)        # max one blank line
+    text = re.sub(r"[ \t]{2,}", " ", text)        # collapse runs of spaces
+
+    # Tidy bullet spacing (avoid blank line before '- ')
+    text = re.sub(r"\n\n- ", "\n- ", text)
+
+    # Put "Item X" headers on their own line, then re-collapse
+    text = re.sub(r"(?mi)\s*(Item\s+\d+(?:\.\d+)*\s*[:\-–—]?)\s*", r"\n\1\n", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    return text.strip()
