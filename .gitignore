@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# venvs
+.venv/
+.uv/
+
+# OS
+.DS_Store
+
+# Local configs
+config.secrets.ini
+.env
+output/

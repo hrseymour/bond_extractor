@@ -1,0 +1,15 @@
+[project]
+name = "bond-scraper"
+version = "0.1.0"
+description = "Production-ready bond data scraper for SEC filings using Gemini 2.5"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "Harlan"}]
+dependencies = [
+  "pandas>=2.0",
+  "requests>=2.31",
+  "google-genai>=0.3",
+]
+
+[tool.uv]
+dev-dependencies = ["pytest>=8.0"]
