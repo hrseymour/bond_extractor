@@ -1,12 +1,11 @@
 import hashlib
-from dataclasses import asdict
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from google import genai
 from google.genai.types import GenerateContentConfig
 
-from .models import BondDetails
-from .utils import normalize_date, parse_frequency, safe_json_loads
+from src.models import BondDetails
+from src.utils import normalize_date, safe_json_loads
 
 class GeminiBondExtractor:
     def __init__(self, api_key: str, model: str = "gemini-2.5-flash"):
@@ -26,12 +25,12 @@ RULES:
 - Percentages to decimals: 5.25% -> 0.0525
 - Bps to decimals: 215 bps -> 0.0215
 - Millions/billions to numbers: $500M -> 500000000
+- Time spans and intervals measured in months
 - Dates must be YYYY-MM-DD
-- Payment/reset frequencies must be numeric: semi-annual=2, quarterly=4, monthly=12
 - Include extraction_confidence (0-1)
 
-TEXT TO ANALYZE (truncated to 60k chars):
-{text[:60000]}
+TEXT TO ANALYZE (truncated to 100k chars):
+{text[:100000]}
 
 Only return JSON, no extra commentary."""
 
@@ -49,20 +48,11 @@ Only return JSON, no extra commentary."""
 
         # Dates -> ISO
         for k in [
-            "issue_date","maturity_date","first_call_date","next_reset_date",
-            "first_payment_date","dated_date","conversion_start_date","conversion_end_date"
+            "next_reset_date","issue_date","dated_date","first_payment_date","maturity_date",
+            "first_call_date", "first_put_date"           
         ]:
             if data.get(k):
                 data[k] = normalize_date(data[k])
-
-        # Benchmark normalize
-        if data.get("rate_benchmark"):
-            data["rate_benchmark"] = str(data["rate_benchmark"]).upper().replace(" ", "")
-
-        # Frequencies
-        for k in ["payment_frequency", "reset_frequency"]:
-            if data.get(k) is not None:
-                data[k] = parse_frequency(data[k])
 
         return data
 

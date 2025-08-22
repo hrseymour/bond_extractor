@@ -1,13 +1,10 @@
 import time
 from dataclasses import asdict
 from typing import Dict, List
-from datetime import datetime
 import pandas as pd
 
 from .sec_client import SECClient
 from .extractor import GeminiBondExtractor
-from .models import BondDetails
-from .utils import has_bond_content
 
 class SmartBondScraper:
     def __init__(self, email: str, api_key: str, model: str = "gemini-2.5-flash"):
@@ -29,7 +26,7 @@ class SmartBondScraper:
         all_bonds: List[dict] = []
         for _, filing in filings.head(max_filings).iterrows():
             content = self.sec.download_filing(cik, filing['accessionNumber'], filing['primaryDocument'])
-            if not content or not has_bond_content(content):
+            if not content:
                 continue
             
             print(filing['form'])

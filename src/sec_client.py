@@ -41,11 +41,23 @@ class SECClient:
             df['filingDate'] = pd.to_datetime(df['filingDate'])
             cutoff = datetime.now() - timedelta(days=days_back)
             bond_forms = [
-                '424B1','424B2','424B3','424B4','424B5','424B7',
-                'S-3','S-3/A','S-3ASR','S-3MEF',
+                # Prospectus/prefix docs
+                '424B1','424B2','424B3','424B4','424B5','424B7','424B8',
+                # Registration statements (U.S. & FPIs)
+                'S-3','S-3/A','S-3ASR','S-3MEF','POS AM','POSASR',
                 'F-3','F-3/A','F-3ASR','F-3MEF',
-                'FWP','8-K','SUPPL','POS AM'
+                'S-1','S-1/A','F-1','F-1/A','S-11','S-11/A',
+                'F-10','F-10/A',
+                # Exchange offers for 144A/Reg S notes
+                'S-4','S-4/A','F-4','F-4/A',
+                # Current reports / listings
+                '8-K','6-K','8-A12B','8-A12B/A','8-A12G','8-A12G/A',
+                # Term sheets / supplements
+                'FWP','SUPPL',
+                # Indenture qualification (private deals)
+                'T-3'
             ]
+
             df = df[(df['filingDate'] >= cutoff) & (df['form'].str.upper().isin([f.upper() for f in bond_forms]))]
             return df.sort_values('filingDate', ascending=False)
         except Exception:

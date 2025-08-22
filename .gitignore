@@ -18,4 +18,5 @@ build/
 config.secrets.ini
 .env
 output/
+output.sav/
 uv.lock

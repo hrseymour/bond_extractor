@@ -53,7 +53,7 @@ the notes involves risks that are described in the &#147;<A HREF="#supptoc201409
 """
 
 text = html_to_structured_text_bs4(text)
-# print(text)
+print(text)
 
 bondex = GeminiBondExtractor(config['gemini']['api_key'], config['gemini']['model'])
 bonds = bondex.extract_bonds_from_text(text, '424B2')

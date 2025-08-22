@@ -23,30 +23,6 @@ def normalize_date(date_str: str) -> Optional[str]:
             pass
     return str(date_str)
 
-def parse_frequency(freq: Any) -> Optional[float]:
-    if isinstance(freq, (int, float)):
-        return float(freq)
-    if isinstance(freq, str):
-        f = freq.lower()
-        if "semi" in f:
-            return 2.0
-        if "quarter" in f:
-            return 4.0
-        if "month" in f:
-            return 12.0
-        if "annual" in f or "year" in f:
-            return 1.0
-    return None
-
-def has_bond_content(text: str) -> bool:
-    indicators = [
-        "notes", "bonds", "debentures", "indenture", "principal amount",
-        "interest rate", "maturity", "senior", "subordinated", "convertible",
-        "sofr", "libor", "floating rate", "rate reset",
-    ]
-    t = text.lower()
-    return any(x in t for x in indicators)
-
 def safe_json_loads(s: str) -> dict:
     """Accepts a string and tries to load JSON even if the model added stray text.
     - Finds the first {...} or [...]
