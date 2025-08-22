@@ -4,7 +4,7 @@ import html
 import re
 from enum import Enum
 from datetime import datetime
-from typing import Any, Optional
+from typing import Dict, Any, Optional
 
 def normalize_date(date_str: str) -> Optional[str]:
     if not date_str:
@@ -86,7 +86,7 @@ def coerce_enum(enum_cls, v: Any):
             return e
     return None
 
-def safe_json_loads(s: str) -> dict:
+def safe_json_loads(s: str) -> Dict[str, Any]:
     """Accepts a string and tries to load JSON even if the model added stray text.
     - Finds the first {...} or [...]
     - Falls back to '{}' if nothing valid is found

@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 from typing import Optional
 import requests
@@ -61,15 +62,39 @@ class SECClient:
         except Exception:
             return pd.DataFrame()
 
-    def download_filing(self, cik: str, accession: str, document: str) -> Optional[str]:
+    def download_filing(self, ticker: str, cik: str, accession: str, document: str, outdir: Optional[str] = None) -> Optional[str]:
         try:
+            # If caching is enabled
+            if outdir is not None:
+                # Create cache directory for this ticker
+                cache_dir = os.path.join(outdir, ticker)
+                os.makedirs(cache_dir, exist_ok=True)
+                
+                # Cache file path
+                cache_file = os.path.join(cache_dir, document)
+                
+                # Check if cached file exists
+                if os.path.exists(cache_file):
+                    # Read from cache
+                    with open(cache_file, 'r', encoding='utf-8') as f:
+                        cached_text = f.read()
+                    text = html_to_structured_text_bs4(cached_text)
+                    return text
+            
+            # Download the filing (either no caching or cache miss)
             acc_clean = accession.replace('-', '')
             url = f"https://www.sec.gov/Archives/edgar/data/{cik.lstrip('0')}/{acc_clean}/{document}"
             r = requests.get(url, headers=self.headers, timeout=30)
             r.raise_for_status()
-            # text = re.sub(r'<[^>]+>', ' ', r.text)
-            # text = re.sub(r'\s+', ' ', text)
+            
+            # If caching is enabled, save to cache
+            if outdir is not None:
+                with open(cache_file, 'w', encoding='utf-8') as f:
+                    f.write(r.text)
+            
+            # Process and return the text
             text = html_to_structured_text_bs4(r.text)
             return text
+            
         except Exception:
             return None

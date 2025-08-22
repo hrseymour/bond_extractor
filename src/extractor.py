@@ -63,7 +63,6 @@ class LLMBondExtractor:
       "next_reset_date": null,             /* YYYY-MM-DD or null */
 
       "issue_date": null,                  /* YYYY-MM-DD or null */
-      "dated_date": null,                  /* YYYY-MM-DD or null */
       "first_payment_date": null,          /* YYYY-MM-DD or null */
       "maturity_date": null,               /* YYYY-MM-DD or null */
 
@@ -82,8 +81,6 @@ class LLMBondExtractor:
       "deferral_allowed": null,            /* true/false or null */
       "max_deferral_period: null,          /* integer number of months (e.g. 60) or null */
       "deferred_interest_cumulative": null /* true/false or null */
-      
-      "sec_filing_type": null              /* string (e.g. "8-K") or null */
     }}
   ]
 }}"""
@@ -130,7 +127,7 @@ class LLMBondExtractor:
 
         # Dates -> ISO
         for k in [
-            "next_reset_date", "issue_date", "dated_date", "first_payment_date", "maturity_date",
+            "next_reset_date", "issue_date", "first_payment_date", "maturity_date",
             "first_call_date", "first_put_date"
         ]:
             data[k] = utils.normalize_date(data[k])
@@ -160,7 +157,7 @@ class LLMBondExtractor:
 
     # ---------- Public API ----------
 
-    def extract_bonds_from_text(self, text: str, filing_type: str) -> Dict[Any]:
+    def extract_bonds_from_text(self, text: str, filing_type: str) -> List[Dict[str, Any]]:
         key = hashlib.md5(text.encode()).hexdigest()
         if key in self._cache:
             return self._cache[key]
@@ -181,7 +178,7 @@ class LLMBondExtractor:
         if not isinstance(bonds_json, list):
             bonds_json = []
 
-        bonds: List[BondDetails] = []
+        bonds: List[Dict[str, Any]] = []
         for raw in bonds_json:
             if not isinstance(raw, dict):
                 continue
@@ -192,10 +189,9 @@ class LLMBondExtractor:
                 # As a final safety, drop any unexpected keys and retry
                 expected = {f.name for f in dataclass_fields(BondDetails)}
                 minimal = {k: v for k, v in clean.items() if k in expected}
-                bd.sec_filing_type = filing_type
                 bd = BondDetails(**minimal)
                 
-            js = json.loads(json.dumps(asdict(bonds[0]), default= utils.json_default))
+            js = json.loads(json.dumps(asdict(bd), default= utils.json_default))
             bonds.append(js)
 
         self._cache[key] = bonds

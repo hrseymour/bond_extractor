@@ -76,7 +76,6 @@ class BondDetails:
 
     # Dates (ISO)
     issue_date: Optional[str] = None
-    dated_date: Optional[str] = None
     first_payment_date: Optional[str] = None
     maturity_date: Optional[str] = None
 
@@ -99,6 +98,3 @@ class BondDetails:
     deferral_allowed: Optional[bool] = None
     max_deferral_period: Optional[int] = None
     deferred_interest_cumulative: Optional[bool] = None
-    
-    # Metadata
-    sec_filing_type: Optional[str] = None

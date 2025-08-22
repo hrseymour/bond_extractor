@@ -3,11 +3,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pathlib import Path
 from datetime import datetime
-import json
 import pandas as pd
 
+from src.scraper import SmartBondScraper
+
 from config import config  # reads config.ini + config.secrets.ini
-from src import SmartBondScraper
 
 def main():
     email = config['sec']['email']
@@ -17,16 +17,16 @@ def main():
     days_back = int(config['run'].get('days_back', 365))
     max_filings = int(config['run'].get('max_filings', 15))
 
-    scraper = SmartBondScraper(email=email, api_key=api_key, model=model)
+    outdir = Path("output")
+    outdir.mkdir(exist_ok=True)
+
+    scraper = SmartBondScraper(email=email, api_key=api_key, model=model, outdir=str(outdir))
 
     companies = [
         {'Symbol': 'AES', 'FullName': 'The AES Corporation', 'Exchange': 'NYSE', 'Currency': 'USD'}
         # {'Symbol': 'F', 'FullName': 'Ford Motor Company', 'Exchange': 'NYSE', 'Currency': 'USD'},
         # {'Symbol': 'T', 'FullName': 'AT&T Inc.', 'Exchange': 'NYSE', 'Currency': 'USD'},
     ]
-
-    outdir = Path("output")
-    outdir.mkdir(exist_ok=True)
 
     all_dfs = []
     for c in companies:
@@ -46,11 +46,6 @@ def main():
     final_file = outdir / f"all_bonds_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     final.to_csv(final_file, index=False)
     print(f"Combined written to {final_file}")
-
-    stats = SmartBondScraper.create_summary_stats(final)
-    stats_file = outdir / f"bond_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    stats_file.write_text(json.dumps(stats, indent=2))
-    print(f"Summary saved to {stats_file}")
 
 if __name__ == "__main__":
     main()
