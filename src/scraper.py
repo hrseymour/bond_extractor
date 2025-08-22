@@ -4,12 +4,12 @@ from typing import Dict, List
 import pandas as pd
 
 from .sec_client import SECClient
-from .extractor import GeminiBondExtractor
+from .extractor import LLMBondExtractor
 
 class SmartBondScraper:
-    def __init__(self, email: str, api_key: str, model: str = "gemini-2.5-flash"):
+    def __init__(self, email: str, api_key: str, model: str):
         self.sec = SECClient(email=email)
-        self.extractor = GeminiBondExtractor(api_key=api_key, model=model)
+        self.extractor = LLMBondExtractor(api_key=api_key, model=model)
 
     def process_company(self, company_spec: Dict, days_back: int = 365, max_filings: int = 20) -> pd.DataFrame:
         ticker = company_spec['Symbol']

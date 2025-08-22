@@ -1,8 +1,10 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from dataclasses import asdict
+
 from src.utils import html_to_structured_text_bs4
-from src.extractor import GeminiBondExtractor
+from src.extractor import LLMBondExtractor
 
 from config import config
 
@@ -55,6 +57,6 @@ the notes involves risks that are described in the &#147;<A HREF="#supptoc201409
 text = html_to_structured_text_bs4(text)
 print(text)
 
-bondex = GeminiBondExtractor(config['gemini']['api_key'], config['gemini']['model'])
+bondex = LLMBondExtractor(config['gemini']['api_key'], config['gemini']['model'])
 bonds = bondex.extract_bonds_from_text(text, '424B2')
-print(bonds)
+print(bonds[0])

@@ -1,5 +1,6 @@
+
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional
 from enum import Enum
 
 class SecurityRank(Enum):
@@ -58,7 +59,7 @@ class BondDetails:
     security_type: Optional[SecurityRank] = None
     principal_amount: Optional[float] = None
     currency: str = "USD"
-    issue_price: Optional[float] = None
+    face_value: Optional[float] = 1000.0
 
     # Interest / coupon
     interest_rate: Optional[float] = None
@@ -94,7 +95,10 @@ class BondDetails:
     conversion_price: Optional[float] = None
     conversion_ratio: Optional[float] = None
 
+    # Deferral features
+    deferral_allowed: Optional[bool] = None
+    max_deferral_period: Optional[int] = None
+    deferred_interest_cumulative: Optional[bool] = None
+    
     # Metadata
-    filing_extracted_from: Optional[str] = None
-    extraction_confidence: Optional[float] = None
-    extraction_timestamp: Optional[str] = None
+    sec_filing_type: Optional[str] = None

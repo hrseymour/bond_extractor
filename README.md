@@ -1,8 +1,7 @@
 # bond-scraper
 
 Production-ready corporate bond extractor that parses SEC EDGAR filings and returns database-ready rows
-using Google's Gemini 2.5 models via the `google-genai` SDK. Organized for maintainability, tested helpers,
-and configuration via `config.ini`/`config.secrets.ini` (no env vars required).
+using an LLM.
 
 ## Install (uv)
 
