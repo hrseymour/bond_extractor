@@ -14,9 +14,8 @@ def main():
     api_key = config['gemini']['api_key']
     model = config['gemini'].get('model', 'gemini-2.0-flash')
 
-    days_back = int(config['run'].get('days_back', 365))
-    max_filings = int(config['run'].get('max_filings', 15))
-
+    days_back = 5 * 365
+    max_filings = 200
     outdir = Path("output")
     outdir.mkdir(exist_ok=True)
 
