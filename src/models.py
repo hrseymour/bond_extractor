@@ -112,13 +112,13 @@ class BondDetails:
     # Call features
     callable: Optional[bool] = None
     first_call_date: Optional[str] = None
-    call_price_pct_of_face: Optional[float] = None
+    call_price: Optional[float] = None
     call_note: Optional[str] = None
 
     # Put features
     puttable: Optional[bool] = None
     first_put_date: Optional[str] = None
-    put_price_pct_of_face: Optional[float] = None
+    put_price: Optional[float] = None
     put_note: Optional[str] = None
 
     # Convertible

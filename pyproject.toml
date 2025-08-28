@@ -11,6 +11,7 @@ dependencies = [
   "google-genai",
   "beautifulsoup4", # if you add the bs4 cleaner
   "lxml",
+  "edgartools"
 ]
 
 [tool.uv]

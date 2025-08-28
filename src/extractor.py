@@ -50,7 +50,7 @@ class LLMBondExtractor:
       "security_type": null,               /* one of {enums['SecurityRank']} */
       "principal_amount": null,            /* number (e.g., 500000000 for $500M) */
       "currency": "USD",                   /* 3-letter code (default USD) */
-      "face_value": null,                  /* number or null (par per note, most often 1000) */
+      "face_value": null,                  /* number or null (par per note, most often 100, sometimes 25 for preferred) */
 
       "interest_rate": null,               /* decimal (e.g., 5.25% -> 0.0525) */
       "coupon_type": null,                 /* one of {enums['CouponType']} */
@@ -77,12 +77,12 @@ class LLMBondExtractor:
 
       "callable": null,                    /* true/false or null */
       "first_call_date": null,             /* YYYY-MM-DD or null */
-      "call_price_pct_of_face": null,      /* number or null (e.g. 100% -> 1.0 for at par) */
+      "call_price": null,                  /* number or null (e.g. 100 for at par) */
       "call_note": null,                   /* short text (e.g., overview of call terms) */
 
       "puttable": null,                    /* true/false or null */
       "first_put_date": null,              /* YYYY-MM-DD or null */
-      "put_price_pct_of_face": null,       /* number or null (e.g. 101% -> 1.01 for 1% premium over par) */
+      "put_price": null,                   /* number or null (e.g. 103.5 for 3.5% premium over par) */
       "put_note": null,                    /* short text (e.g., overview of put terms, e.g. change of control) */
 
       "convertible": null,                 /* true/false or null */
