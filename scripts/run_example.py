@@ -20,23 +20,25 @@ def main():
     outdir.mkdir(exist_ok=True)
     
     sec = SECClient(email, name)
-    df_filings = sec.get_recent_filings(
-        company=["AES"],  # , "FMC"
-        # search_term='"Fixed-to-Fixed Reset Rate" OR "Fixed-to-Floating Rate"',
-        # file_types=["424B1","424B2","424B3","424B4","424B5","424B7","424B8","FWP"],
-        file_types=["FWP"],
-        from_date="2024-01-01",
-        to_date="2025-09-01"
-    )
-
-    scraper = SmartBondScraper(sec, model=model, api_key=api_key, outdir=str(outdir))
-    df = scraper.process_filings(df_filings)
+    # df_filings = sec.get_recent_filings(
+    #     # company=["AES", "FMC"],
+    #     # search_term='"Fixed-to-Fixed Reset Rate" OR "Fixed-to-Floating Rate"',
+    #     search_term='"Fixed-to-Floating Rate"',
+    #     # file_types=["424B1","424B2","424B3","424B4","424B5","424B7","424B8","FWP"],
+    #     file_types=["FWP"],
+    #     from_date="2020-01-01",
+    #     to_date="2025-09-01",
+    #     skip_ciks = ["0000019617", "0000895421"]  # + ["0001666268", "0000083246"]
+    # )
     
-    if not df.empty:
-        # pd.concat(all_dfs, ignore_index=True)
-        fname = outdir / f"Bonds_{datetime.now().strftime('%Y%m%d')}.csv"
-        df.to_csv(fname, index=False)
-        print(f"Saved {len(df)} rows to {fname}")
+    fn = str(outdir) + "/" + "filings.csv"
+    # df_filings.to_csv(fn, index = False)
+    df_filings = pd.read_csv(fn)
+
+    scraper = SmartBondScraper(sec, model=model, api_key=api_key, filings_dir=str(outdir))
+    
+    report_file = os.path.join(outdir, f"Bonds_{datetime.now().strftime('%Y%m%d')}.csv")
+    df = scraper.process_filings(df_filings, report_file)
 
 if __name__ == "__main__":
     main()

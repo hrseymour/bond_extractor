@@ -47,10 +47,10 @@ class LLMBondExtractor:
       "cusip": null,                       /* string (9-char CUSIP) or null */
       "isin": null,                        /* string (12-char ISIN) or null */
 
-      "security_type": null,               /* one of {enums['SecurityRank']} */
+      "security_type": null,               /* one of {enums['SecurityRank']} (rank in capital structure)*/
       "principal_amount": null,            /* number (e.g., 500000000 for $500M) */
       "currency": "USD",                   /* 3-letter code (default USD) */
-      "face_value": null,                  /* number or null (par per note, most often 100, sometimes 25 for preferred) */
+      "face_value": null,                  /* number or null (face value per bond, almost always 1000) */
 
       "interest_rate": null,               /* decimal (e.g., 5.25% -> 0.0525) */
       "coupon_type": null,                 /* one of {enums['CouponType']} */
@@ -77,7 +77,7 @@ class LLMBondExtractor:
 
       "callable": null,                    /* true/false or null */
       "first_call_date": null,             /* YYYY-MM-DD or null */
-      "call_price": null,                  /* number or null (e.g. 100 for at par) */
+      "call_price": null,                  /* number or null (e.g. 100.0 for at par) */
       "call_note": null,                   /* short text (e.g., overview of call terms) */
 
       "puttable": null,                    /* true/false or null */
@@ -120,8 +120,8 @@ class LLMBondExtractor:
             "Extract ALL bond information from this SEC filing.\n"
             + self._schema_block() + "\n\n"
             + self._rules_block() + "\n\n"
-            + "TEXT TO ANALYZE (truncated to 100k chars):\n"
-            + text[:100000] + "\n\n"
+            + "TEXT TO ANALYZE (truncated to 64k chars):\n"
+            + text[:65536] + "\n\n"
             + "Only return JSON, no extra commentary."
         )
 
@@ -130,7 +130,7 @@ class LLMBondExtractor:
     def _clean_bond_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         # Rates -> decimals if accidentally given as percent-like numbers
         for k in ["interest_rate", "rate_spread", "rate_floor", "rate_cap",
-                  "call_price_pct_of_face", "put_price_pct_of_face"
+                  "call_price", "put_price"
                   ]:
             data[k] = utils.from_percent(data.get(k))
 
@@ -195,6 +195,9 @@ class LLMBondExtractor:
         )
 
         payload = utils.safe_json_loads(getattr(resp, "text", "") or "") or {}
+        if isinstance(payload, list):  # weird case
+            payload = payload[0]
+        
         bonds_json = payload.get("bonds", [])
         if not isinstance(bonds_json, list):
             bonds_json = []

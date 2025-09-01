@@ -18,7 +18,7 @@ class CouponType(Enum):
     FIXED = "Fixed"
     FLOATER = "Floater"               # Floating for life (e.g., SOFR 3M + spread)
     FIXED_TO_FLOAT = "FixedToFloat"   # Fixed until a switch date, then true floater
-    RATE_RESET = "RateReset"          # Fixed-to-fixed resets to term benchmark every few years
+    FIXED_TO_RATE_RESET = "FixedToRateReset"   # Fixed-to-rate resets to term benchmark every few years
     STEP_UP = "StepUp"
     STEP_DOWN = "StepDown"
     OTHER = "Other"

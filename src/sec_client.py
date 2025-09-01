@@ -64,32 +64,35 @@ class SECClient:
 
     def _parse_company_string(self, company_string: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         """
-        Parse a company string like "AES CORP  (AES)  (CIK 0000874761)" into components.
-        
-        Args:
-            company_string: String in format "COMPANY NAME (TICKER) (CIK xxxxxxxxxx)"
-            
-        Returns:
-            Tuple of (company_name, ticker, cik) or (None, None, None) if parsing fails
+        Parse strings like:
+        "AES CORP  (AES)  (CIK 0000874761)"  -> ("AES CORP", "AES", "0000874761")
+        "AES CORP  (CIK 0000874761)"         -> ("AES CORP", None,  "0000874761")
         """
         if not company_string or not isinstance(company_string, str):
             return (None, None, None)
-        
-        # Pattern to match: COMPANY_NAME (TICKER) (CIK xxxxxxxxxx)
-        # Using regex groups to capture each part
-        pattern = r'^(.+?)\s+\(([^)]+)\)\s+\(CIK\s+(\d+)\)$'
-        
-        match = re.match(pattern, company_string.strip())
-        
-        if match:
-            company_name = match.group(1).strip()
-            ticker = match.group(2).strip()
-            cik = match.group(3).strip()
-            return (company_name, ticker, cik)
-        else:
-            return (None, None, None)
-    
 
+        s = company_string.strip()
+
+        # 1) Extract CIK at the end (case-insensitive for 'CIK')
+        m_cik = re.search(r'\((?i:CIK)\s*(\d+)\)\s*$', s)
+        if not m_cik:
+            return (None, None, None)
+
+        cik = m_cik.group(1).strip()
+        before_cik = s[:m_cik.start()].rstrip()
+
+        # 2) Optionally extract a trailing "(TICKER)" just before CIK
+        m_ticker = re.search(r'\(([^()]+)\)\s*$', before_cik)
+        if m_ticker:
+            ticker = m_ticker.group(1).strip()
+            company_name = before_cik[:m_ticker.start()].rstrip()
+        else:
+            ticker = None
+            company_name = before_cik
+
+        company_name = company_name if company_name else None
+        return (company_name, ticker, cik)
+            
     def _fetch_filings_batch(self, params: dict, from_offset: int = 0, size: int = 100) -> tuple[List[dict], Optional[int]]:
         """Fetch a single batch of filings with pagination."""
         batch_params = params.copy()
@@ -130,6 +133,7 @@ class SECClient:
         file_types: Union[str, List[str]] = None,
         from_date: str = None,
         to_date: str = None,
+        skip_ciks: List[str] = [],
         max_results: int = 5000,
     ) -> pd.DataFrame:
         """Query the EDGAR search index with pagination support.
@@ -138,6 +142,7 @@ class SECClient:
           - search_term: full-text query (e.g., '"Fixed-to-Fixed" OR "Fixed-to-Floating"')
           - file_types: list/CSV of form types (e.g., ['424B2','FWP'])
           - from_date/to_date: YYYY-MM-DD; defaults to last 5 years ending today if omitted.
+          - skip_ciks: list of entities to skip based in their CIKs
           - max_results: maximum number of results to fetch (default 1000)
         Returns a tidy pandas DataFrame with one row per filing, duplicates removed.
         """
@@ -206,11 +211,13 @@ class SECClient:
             # Clean the company name
             raw_name = (s.get("display_names") or [""])[0]
             company_name, ticker, cik = self._parse_company_string(raw_name)
-            # cik = (s.get("ciks") or [""])[0]
+            cik = (s.get("ciks") or [""])[0]
+            if cik in skip_ciks:
+                continue
             
             rows.append({
                 "company_name": company_name,
-                "ticker": ticker,
+                "ticker": ticker or "PRIVATE",
                 "cik": cik,
                 "form": s.get("form"),
                 "filing_date": s.get("file_date"),
