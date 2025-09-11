@@ -24,11 +24,11 @@ class SmartBondScraper:
              df.to_csv(report_file, index=False)        
         return df
 
-    def process_filings(self, df_filings: pd.DataFrame, report_file: str = None) -> pd.DataFrame:
+    def process_filings(self, df_filings: pd.DataFrame, report_file: str = None, skip_cached: bool = True) -> pd.DataFrame:
         all_bonds: List[Dict[str, Any]] = []
         for _, filing in df_filings.iterrows():
-            content = self.sec.download_filing(filing['ticker'], filing['accession_no'], self.filings_dir)
-            if not content:
+            content, is_cached = self.sec.download_filing(filing['ticker'], filing['accession_no'], self.filings_dir)
+            if not content or (skip_cached and is_cached):
                 continue
             
             print(filing['ticker'], filing['form'])

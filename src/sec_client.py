@@ -238,7 +238,7 @@ class SECClient:
             
         return df.reset_index(drop=True)
 
-    def download_filing(self, ticker: str, accession_no: str, outdir: Optional[str] = None) -> Optional[str]:
+    def download_filing(self, ticker: str, accession_no: str, outdir: Optional[str] = None) -> Tuple[Optional[str], bool]:
         try:
             # If caching is enabled
             if outdir is not None:
@@ -255,11 +255,11 @@ class SECClient:
                     with open(cache_file, 'r', encoding='utf-8') as f:
                         cached_text = f.read()
                     text = cached_text
-                    return text
+                    return text, True
             
             filing = edgar.find(accession_no)
             if filing.cik < 1:
-                return None
+                return None, False
 
             text = filing.text()
             
@@ -269,10 +269,10 @@ class SECClient:
                     f.write(text)
             
             # Process and return the text
-            return text
+            return text, False
             
         except Exception:
-            return None
+            return None, False
 
 
 if __name__ == "__main__":

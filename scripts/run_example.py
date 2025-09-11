@@ -16,14 +16,14 @@ def main():
     model = config['gemini'].get('model', 'gemini-2.0-flash')
     api_key = config['gemini']['api_key']
 
-    outdir = Path("output")
+    outdir = Path("output/cache")
     outdir.mkdir(exist_ok=True)
     
     sec = SECClient(email, name)
     # df_filings = sec.get_recent_filings(
     #     # company=["AES", "FMC"],
     #     # search_term='"Fixed-to-Fixed Reset Rate" OR "Fixed-to-Floating Rate"',
-    #     search_term='"Fixed-to-Floating Rate"',
+    #     search_term='"Fixed-to-Floating Rate" AND CUSIP',
     #     # file_types=["424B1","424B2","424B3","424B4","424B5","424B7","424B8","FWP"],
     #     file_types=["FWP"],
     #     from_date="2020-01-01",
@@ -37,8 +37,8 @@ def main():
 
     scraper = SmartBondScraper(sec, model=model, api_key=api_key, filings_dir=str(outdir))
     
-    report_file = os.path.join(outdir, f"Bonds_{datetime.now().strftime('%Y%m%d')}.csv")
-    df = scraper.process_filings(df_filings, report_file)
+    report_file = f"output/Bonds_{datetime.now().strftime('%Y%m%d')}.csv"
+    df = scraper.process_filings(df_filings, report_file, skip_cached = False)
 
 if __name__ == "__main__":
     main()
