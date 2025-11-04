@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 from google import genai
 from google.genai.types import GenerateContentConfig
 
-from src.models import (
+from src.reset_models import (
     BondDetails,
     SecurityRank,
     CouponType,

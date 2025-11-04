@@ -34,7 +34,7 @@ Edit `config.ini` to input your email address and select your desired Gemini mod
 
 ```bash
 cd scripts
-python run_example.py
+python run_reset.py
 ```
 
-Results are written to `./output/` as CSV and JSON. See `scripts/run_example.py` for how to pass your own company list.
+Results are written to `./output/` as CSV and JSON. See `scripts/run_reset.py` for how to pass your own company list.

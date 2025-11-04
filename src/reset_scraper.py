@@ -3,7 +3,7 @@ from typing import Dict, List, Any, Optional
 import pandas as pd
 
 from .sec_client import SECClient
-from .extractor import LLMBondExtractor
+from .reset_extractor import LLMBondExtractor
 
 class SmartBondScraper:
     def __init__(self, sec: SECClient, model: str, api_key: str, filings_dir: str = None):
