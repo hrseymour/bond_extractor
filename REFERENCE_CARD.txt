@@ -1,0 +1,223 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                         WARRANT EXTRACTOR                                  ║
+║                         Quick Reference Card                               ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ QUICK START                                                             │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  1. Copy files to your project:
+     ├─ src/warrant_models.py
+     ├─ src/warrant_extractor.py
+     ├─ src/warrant_scraper.py
+     ├─ scripts/extract_warrants.py
+     └─ scripts/run_warrant_example.py
+
+  2. Verify config.ini has [sec] and [gemini] sections
+
+  3. Test: python scripts/extract_warrants.py DSX
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ COMMON COMMANDS                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  Single ticker:
+    python scripts/extract_warrants.py DSX
+
+  Multiple tickers:
+    python scripts/extract_warrants.py DSX IONQ SPCE
+
+  From file:
+    python scripts/extract_warrants.py --from-file tickers.txt
+
+  Custom date range:
+    python scripts/extract_warrants.py DSX --from-date 2022-01-01
+
+  Different forms:
+    python scripts/extract_warrants.py DSX --forms "8-A,424B5"
+
+  Run test example:
+    python scripts/run_warrant_example.py
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ COMMAND LINE OPTIONS                                                    │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  --from-file FILE        Read tickers from file (one per line)
+  --from-date YYYY-MM-DD  Start date (default: 2020-01-01)
+  --to-date YYYY-MM-DD    End date (default: today)
+  --forms TYPE,TYPE       Form types (default: 8-A,424B2,424B3,424B5)
+  --search "term"         Search term (default: "warrant")
+  --output FILE.csv       Output file (default: auto-generated)
+  --cache-dir DIR         Cache directory (default: output/warrant_cache)
+  --skip-cached           Skip cached filings
+  --max-results N         Max filings per ticker (default: 100)
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ OUTPUT                                                                  │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  Location: output/Warrants_YYYYMMDD_HHMMSS.csv
+
+  Key columns:
+    • symbol, parent, strike_price, expiration_date, conversion_ratio
+    • has_call_trigger, call_trigger_price, call_trigger_days
+    • exercise_type, settlement_type, allows_cashless_exercise
+    • has_anti_dilution, adjusts_for_stock_splits
+    • has_ownership_limit, ownership_limit_pct
+    • spac_related, warrant_class, notes
+    • ... and ~50 more (empty columns dropped)
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ WHAT GETS EXTRACTED                                                     │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  Core Terms:
+    ✓ Strike price, expiration, conversion ratio
+    ✓ Issue date, warrant type (Call/Put)
+    ✓ Parent ticker, exchange, currency
+
+  Call Triggers (CRITICAL):
+    ✓ Trigger price (e.g., $18.00)
+    ✓ Trading pattern (e.g., 20 out of 30 days)
+    ✓ Redemption price (what issuer pays)
+    ✓ Notice period
+
+  Exercise & Settlement:
+    ✓ Exercise type (American/European/Bermuda)
+    ✓ Settlement type (Physical/Cash/Net Share)
+    ✓ Cashless exercise terms
+
+  Adjustments:
+    ✓ Stock splits, dividends, mergers
+    ✓ Anti-dilution provisions (Full Ratchet, Weighted Avg)
+
+  Restrictions:
+    ✓ Ownership limits (e.g., 4.99% blocker)
+    ✓ Transfer restrictions
+    ✓ Registration rights
+
+  Classification:
+    ✓ SPAC-related flag
+    ✓ Warrant class (Public/Private/Founder)
+    ✓ Free-form notes
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ SEC FILING TYPES                                                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  8-A       → Primary warrant registration
+  424B2/B5  → Prospectus supplements with terms
+  6-K       → Foreign issuer filings (if needed)
+
+  Search terms to try:
+    • "warrant"
+    • "warrant agreement"
+    • "exercise price"
+    • "redemption"
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ TROUBLESHOOTING                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  No filings found?
+    → Check ticker symbol is correct
+    → Try broader date range (--from-date 2015-01-01)
+    → Try just search term "warrant" without other filters
+
+  Extraction errors?
+    → Check cached filing: output/warrant_cache/{TICKER}/{TICKER}.*.txt
+    → Verify filing contains warrant terms (not just mentions warrants)
+    → Check Gemini API key in config.secrets.ini
+
+  Empty results?
+    → Some filings mention warrants but lack specifications
+    → Try different form types (add 6-K for foreign companies)
+    → Manually inspect filing_url from warrant_filings.csv
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ CONFIGURATION                                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  config.ini:
+    [sec]
+    name = Your Name
+    email = your@email.com
+
+    [gemini]
+    model = gemini-2.5-pro  # or gemini-2.0-flash
+
+  config.secrets.ini:
+    [gemini]
+    api_key = your_api_key_here
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ EXAMPLE WORKFLOW                                                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  Step 1: Test with known warrant
+    $ python scripts/extract_warrants.py DSX
+
+  Step 2: Review output
+    $ less output/Warrants_*.csv
+
+  Step 3: Create ticker list (tickers.txt):
+    DSX
+    IONQ
+    SPCE
+    # Add more tickers
+
+  Step 4: Batch process
+    $ python scripts/extract_warrants.py --from-file tickers.txt
+
+  Step 5: Import to SQL Server
+    >>> import pandas as pd
+    >>> df = pd.read_csv('output/Warrants_*.csv')
+    >>> # Clean/validate data
+    >>> df.to_sql('Warrant', engine, if_exists='append', index=False)
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ARCHITECTURE                                                            │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  src/warrant_models.py
+    └─ WarrantDetails dataclass (all 60+ fields)
+    └─ Enums (WarrantType, ExerciseType, etc.)
+
+  src/warrant_extractor.py
+    └─ LLMWarrantExtractor
+       ├─ Builds prompts with full schema
+       ├─ Calls Gemini API
+       ├─ Normalizes and validates output
+       └─ Returns structured JSON
+
+  src/warrant_scraper.py
+    └─ SmartWarrantScraper
+       ├─ Downloads filings via SECClient
+       ├─ Calls LLMWarrantExtractor
+       ├─ Adds filing metadata
+       └─ Saves incremental CSV
+
+  scripts/extract_warrants.py
+    └─ CLI interface
+       ├─ Argument parsing
+       ├─ Progress tracking
+       └─ Summary reports
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ HELP & DOCUMENTATION                                                    │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  QUICKSTART.md      → Installation and basic usage
+  README_WARRANT.md  → Comprehensive guide
+  BUILD_SUMMARY.md   → What was built and why
+  Warrant.sql        → Database schema
+  Handoff.md         → Project background
+
+  Command help:
+    python scripts/extract_warrants.py --help
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║ Ready to extract warrants! Start with: python scripts/extract_warrants.py DSX ║
+╚════════════════════════════════════════════════════════════════════════════╝
