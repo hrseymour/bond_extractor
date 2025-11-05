@@ -8,6 +8,7 @@ from google.genai.types import GenerateContentConfig
 
 from src.warrant_models import (
     WarrantDetails,
+    Exchange,
     WarrantType,
     ExerciseType,
     SettlementType,
@@ -30,6 +31,7 @@ class LLMWarrantExtractor:
 
     def _allowed_enums(self) -> Dict[str, List[str]]:
         return {
+            "Exchange": [e.value for e in Exchange],
             "WarrantType": [e.value for e in WarrantType],
             "ExerciseType": [e.value for e in ExerciseType],
             "SettlementType": [e.value for e in SettlementType],
@@ -43,9 +45,9 @@ class LLMWarrantExtractor:
 {{
   "warrants": [
     {{
-      "symbol": null,                       /* string (e.g., 'DSX WS') or null */
+      "symbol": null,                       /* string (e.g., 'DSX') same as "parent" by default */
       "isin": null,                         /* string (12-char ISIN) or null */
-      "exchange": null,                     /* string (e.g., 'NYSE', 'NASDAQ') or null */
+      "exchange": null,                     /* one of {enums['Exchange']} */
       "invalid_symbol": null,               /* true/false or null */
       "parent": null,                       /* string (underlying stock symbol, e.g., 'DSX') */
       "currency": "USD",                    /* 3-letter code (default USD) */
@@ -116,9 +118,8 @@ class LLMWarrantExtractor:
       "original_issue_price": null,         /* decimal or null */
       "issued_with_security": null,         /* short text (e.g., 'Common Stock', 'Bond') or null */
 
-      "issuer_cik": null,                   /* string (10-digit CIK) or null */
-      "warrant_agreement_url": null,        /* URL string or null */
-      "prospectus_supplement_url": null,    /* URL string or null */
+      "issuer_cik": null,                   /* int (up to 10-digit CIK) or null */
+      "filing_url": null,                   /* URL string or null */
 
       "is_extendable": null,                /* true/false or null */
       "extension_conditions": null,         /* short text or null */
@@ -141,15 +142,15 @@ class LLMWarrantExtractor:
             "- Output MUST be valid JSON matching the structure above.\n"
             "- Use ONLY the keys listed; do NOT invent new keys.\n"
             "- If data is not present, include the key with null.\n"
-            "- Convert percentages to decimals (e.g., 4.99% -> 0.0499).\n"
+            "- Convert percentages (but not ratios!) to decimals (e.g., 4.99% -> 0.0499).\n"
             "- Convert dollars to decimals (e.g., $11.50 -> 11.50).\n"
             "- Express conversion_ratio as decimal (e.g., 1.66585 shares per warrant).\n"
             "- All dates must be YYYY-MM-DD.\n"
             "- For call triggers, extract the pattern: 'X out of Y days above $Z'.\n"
             "- If warrant agreement describes multiple warrant classes (Public/Private/Founder), create separate entries.\n"
-            f"- For enums use EXACT values from: WarrantType, ExerciseType, SettlementType, AntiDilutionType, WarrantClass.\n"
+            "- For enums use EXACT values from: WarrantType, ExerciseType, SettlementType, AntiDilutionType, WarrantClass.\n"
             "- Pay special attention to redemption/call provisions - these are critical.\n"
-            "- If you find terms that don't fit the schema, put them in 'notes'."
+            "- If you find terms that don't fit the schema, put them in 'notes' as a single string."
         )
 
     def _prompt(self, text: str, parent_ticker: str) -> str:
@@ -210,6 +211,7 @@ class LLMWarrantExtractor:
         return data
 
     def _coerce_enums(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        data["exchange"] = utils.coerce_enum(Exchange, data.get("exchange"))
         data["warrant_type"] = utils.coerce_enum(WarrantType, data.get("warrant_type"))
         data["exercise_type"] = utils.coerce_enum(ExerciseType, data.get("exercise_type"))
         data["settlement_type"] = utils.coerce_enum(SettlementType, data.get("settlement_type"))
@@ -247,7 +249,7 @@ class LLMWarrantExtractor:
         if isinstance(payload, list):
             payload = payload[0]
         
-        warrants_json = payload.get("warrants", [])
+        warrants_json = payload.get("warrants", [payload])
         if not isinstance(warrants_json, list):
             warrants_json = []
 

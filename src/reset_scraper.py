@@ -20,18 +20,23 @@ class SmartBondScraper:
         other_cols = [c for c in df.columns if c not in first_cols]
         df = df[first_cols + other_cols]
         
+        # Drop columns that are all null
+        df = df.dropna(axis=1, how='all')
+
         if report_file:
              df.to_csv(report_file, index=False)        
         return df
 
     def process_filings(self, df_filings: pd.DataFrame, report_file: str = None, skip_cached: bool = True) -> pd.DataFrame:
         all_bonds: List[Dict[str, Any]] = []
+
         for _, filing in df_filings.iterrows():
             content, is_cached = self.sec.download_filing(filing['ticker'], filing['accession_no'], self.filings_dir)
             if not content or (skip_cached and is_cached):
                 continue
             
-            print(filing['ticker'], filing['form'])
+            print(f"Processing: {filing['ticker']} {filing['form']} {filing['filing_date']}")
+
             bonds = self.extractor.extract_bonds_from_text(content, filing['form'])
             for bd in bonds:
                 bd.update({
@@ -44,6 +49,8 @@ class SmartBondScraper:
                     'filing_url': filing['filing_url']
                 })
                 all_bonds.append(bd)
+                
+                # Save incrementally after each bond
                 df = self._to_df(all_bonds, report_file)
                 
         return df

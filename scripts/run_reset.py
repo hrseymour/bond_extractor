@@ -16,7 +16,7 @@ def main():
     model = config['gemini'].get('model', 'gemini-2.0-flash')
     api_key = config['gemini']['api_key']
 
-    outdir = Path("output/cache")
+    outdir = Path("output/reset_cache")
     outdir.mkdir(exist_ok=True)
     
     sec = SECClient(email, name)
@@ -31,9 +31,9 @@ def main():
         skip_ciks = ["0000019617", "0000895421"]  # + ["0001666268", "0000083246"]
     )
     
-    # fn = str(outdir) + "/" + "filings.csv"
+    fn = str(outdir) + "/" + "filings.csv"
     # df_filings.to_csv(fn, index = False)
-    # df_filings = pd.read_csv(fn)
+    df_filings = pd.read_csv(fn)
 
     scraper = SmartBondScraper(sec, model=model, api_key=api_key, filings_dir=str(outdir))
     

@@ -6,6 +6,13 @@ from enum import Enum
 # Enums
 # -----------------------------
 
+class Exchange(Enum):
+    NYSE = "NYSE"
+    AMEX = "AMEX"
+    NNM = "NNM"
+    PINK = "PINK"
+    UNK = "UNK"
+       
 class WarrantType(Enum):
     CALL = "Call"
     PUT = "Put"
@@ -129,9 +136,8 @@ class WarrantDetails:
     issued_with_security: Optional[str] = None
 
     # SEC FILINGS & LEGAL DOCUMENTATION
-    issuer_cik: Optional[str] = None
-    warrant_agreement_url: Optional[str] = None
-    prospectus_supplement_url: Optional[str] = None
+    issuer_cik: Optional[int] = None
+    filing_url: Optional[str] = None
 
     # EXOTIC/RARE FEATURES
     is_extendable: Optional[bool] = None

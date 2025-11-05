@@ -18,14 +18,9 @@ class SmartWarrantScraper:
         df = pd.DataFrame(all_warrants)
         
         # Reorder columns: metadata first, then warrant details
-        first_cols = ['ticker', 'company_name', 'form', 'filing_date']
-        warrant_cols = ['symbol', 'parent', 'strike_price', 'expiration_date', 'conversion_ratio']
-        other_cols = [c for c in df.columns if c not in first_cols + warrant_cols]
-        
-        # Build final column order
-        final_cols = first_cols + warrant_cols + other_cols
-        final_cols = [c for c in final_cols if c in df.columns]
-        df = df[final_cols]
+        first_cols = ['parent']
+        other_cols = [c for c in df.columns if c not in first_cols + first_cols]
+        df = df[first_cols + other_cols]
         
         # Drop columns that are all null
         df = df.dropna(axis=1, how='all')
@@ -55,12 +50,7 @@ class SmartWarrantScraper:
             # Add filing metadata to each warrant
             for wd in warrants:
                 wd.update({
-                    'company_name': filing['company_name'],
-                    'ticker': filing['ticker'],
-                    'cik': filing['cik'],
-                    'form': filing['form'],
-                    'filing_date': filing['filing_date'],
-                    'accession_no': filing['accession_no'],
+                    'issuer_cik': int(filing['cik']),
                     'filing_url': filing['filing_url']
                 })
                 all_warrants.append(wd)

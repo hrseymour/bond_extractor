@@ -111,7 +111,7 @@ class LLMBondExtractor:
             "- Convert millions/billions to absolute numbers ($500M -> 500000000).\n"
             "- Express time intervals in MONTHS (e.g., 5 years -> 60).\n"
             "- All dates must be YYYY-MM-DD.\n"
-            f"- For enums use EXACT values from: SecurityRank, CouponType, PaymentFrequency, RateBenchmark, RateChangeTrigger."
+            "- For enums use EXACT values from: SecurityRank, CouponType, PaymentFrequency, RateBenchmark, RateChangeTrigger."
         )
 
     def _prompt(self, text: str) -> str:
