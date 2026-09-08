@@ -1,5 +1,6 @@
 import os
 import re
+import time
 from datetime import datetime, timedelta
 from typing import Optional, Union, List, Iterable, Tuple
 import requests
@@ -93,17 +94,46 @@ class SECClient:
         company_name = company_name if company_name else None
         return (company_name, ticker, cik)
             
-    def _fetch_filings_batch(self, params: dict, from_offset: int = 0, size: int = 100) -> tuple[List[dict], Optional[int]]:
-        """Fetch a single batch of filings with pagination."""
+    def _fetch_filings_batch(self, params: dict, from_offset: int = 0, size: int = 100,
+                             max_retries: int = 3) -> tuple[List[dict], Optional[int]]:
+        """Fetch a single batch of filings with pagination.
+
+        EFTS full-text phrase queries are heavy (often >1s) and the server
+        sheds load with transient 500s. Retry those (and connection/timeout
+        errors) with exponential backoff so a blip doesn't silently drop the
+        CUSIP/full-text path -- the one that finds finance-sub bonds. Client
+        errors (4xx) fail fast. After all retries, degrade to "no hits" so the
+        caller returns nothing rather than crashing.
+        """
         batch_params = params.copy()
         batch_params.update({
             "from": from_offset,
             "size": size
         })
-        
-        r = requests.get(EFTS_URL, headers=self.headers, params=batch_params, timeout=30)
-        r.raise_for_status()
-        data = r.json()
+
+        data = None
+        backoff = 1.0
+        for attempt in range(max_retries):
+            try:
+                r = requests.get(EFTS_URL, headers=self.headers,
+                                 params=batch_params, timeout=30)
+                if 500 <= r.status_code < 600:
+                    raise requests.HTTPError(
+                        f"{r.status_code} Server Error", response=r)
+                r.raise_for_status()
+                data = r.json()
+                break
+            except requests.RequestException as e:
+                status = getattr(getattr(e, "response", None), "status_code", None)
+                if status is not None and 400 <= status < 500:
+                    print(f"EFTS request failed ({from_offset=}): {e}")
+                    return [], None  # client error -- retrying won't help
+                if attempt + 1 >= max_retries:
+                    print(f"EFTS request failed after {max_retries} tries "
+                          f"({from_offset=}): {e}")
+                    return [], None
+                time.sleep(backoff)
+                backoff *= 2
 
         hits = []
         total_hits = None

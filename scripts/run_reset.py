@@ -32,13 +32,14 @@ def main():
     )
     
     fn = str(outdir) + "/" + "filings.csv"
-    # df_filings.to_csv(fn, index = False)
-    df_filings = pd.read_csv(fn)
+    df_filings.to_csv(fn, index = False)
+    # df_filings = pd.read_csv(fn)
 
     scraper = SmartBondScraper(sec, model=model, api_key=api_key, filings_dir=str(outdir))
     
     report_file = f"output/Bonds_{datetime.now().strftime('%Y%m%d')}.csv"
     df = scraper.process_filings(df_filings, report_file, skip_cached = False)
+    print(df.head())
 
 if __name__ == "__main__":
     main()

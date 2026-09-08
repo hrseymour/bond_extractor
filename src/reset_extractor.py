@@ -1,24 +1,21 @@
 import hashlib
 import json
+from dataclasses import asdict
+from dataclasses import fields as dataclass_fields
 from pprint import pprint
-from dataclasses import asdict, fields as dataclass_fields
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from google import genai
 from google.genai.types import GenerateContentConfig
 
-from src.reset_models import (
-    BondDetails,
-    SecurityRank,
-    CouponType,
-    PaymentFrequency,
-    RateBenchmark,
-    RateChangeTrigger,
-)
-import src.utils as utils
+from .reset_models import (BondDetails, CouponType, PaymentFrequency,
+                          RateBenchmark, RateChangeTrigger, SecurityRank)
+import src.bond_utils as utils
 
 # ---------------------------------------
 # LLM Bond Extractor
 # ---------------------------------------
+
 
 class LLMBondExtractor:
     def __init__(self, api_key: str, model: str):
@@ -140,7 +137,7 @@ class LLMBondExtractor:
 
         # Booleans
         for k in ["inflation_linked", "perpetual", "callable", "puttable",
-                  "convertible", "pik_allowed", "coco_at1_t2"
+                  "convertible", "pik_allowed", "coco_at1_t2",
                   "deferral_allowed", "deferred_interest_cumulative"
                   ]:
             data[k] = utils.to_bool(data.get(k))
@@ -161,11 +158,16 @@ class LLMBondExtractor:
         return data
 
     def _coerce_enums(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        data["security_type"] = utils.coerce_enum(SecurityRank, data.get("security_type"))
-        data["coupon_type"] = utils.coerce_enum(CouponType, data.get("coupon_type"))
-        data["payment_frequency"] = utils.coerce_enum(PaymentFrequency, data.get("payment_frequency"))
-        data["rate_benchmark"] = utils.coerce_enum(RateBenchmark, data.get("rate_benchmark"))
-        data["rate_change_trigger"] = utils.coerce_enum(RateChangeTrigger, data.get("rate_change_trigger"))
+        data["security_type"] = utils.coerce_enum(
+            SecurityRank, data.get("security_type"))
+        data["coupon_type"] = utils.coerce_enum(
+            CouponType, data.get("coupon_type"))
+        data["payment_frequency"] = utils.coerce_enum(
+            PaymentFrequency, data.get("payment_frequency"))
+        data["rate_benchmark"] = utils.coerce_enum(
+            RateBenchmark, data.get("rate_benchmark"))
+        data["rate_change_trigger"] = utils.coerce_enum(
+            RateChangeTrigger, data.get("rate_change_trigger"))
         return data
 
     def _normalize_and_validate(self, raw: Dict[str, Any]) -> Dict[str, Any]:
@@ -197,7 +199,7 @@ class LLMBondExtractor:
         payload = utils.safe_json_loads(getattr(resp, "text", "") or "") or {}
         if isinstance(payload, list):  # weird case
             payload = payload[0]
-        
+
         bonds_json = payload.get("bonds", [])
         if not isinstance(bonds_json, list):
             bonds_json = []
@@ -214,8 +216,8 @@ class LLMBondExtractor:
                 expected = {f.name for f in dataclass_fields(BondDetails)}
                 minimal = {k: v for k, v in clean.items() if k in expected}
                 bd = BondDetails(**minimal)
-                
-            js = json.loads(json.dumps(asdict(bd), default= utils.json_default))
+
+            js = json.loads(json.dumps(asdict(bd), default=utils.json_default))
             pprint(js)
             bonds.append(js)
 
